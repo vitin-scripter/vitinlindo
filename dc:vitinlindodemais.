@@ -1,0 +1,168 @@
+-- ADMIN PANEL UI (LEGÍTIMO / DEMO)
+
+-- SERVICES
+local Players = game:GetService("Players")
+local TextChatService = game:GetService("TextChatService")
+local UserInputService = game:GetService("UserInputService")
+
+local lp = Players.LocalPlayer
+local pg = lp:WaitForChild("PlayerGui")
+
+-- COMMANDS (exemplo)
+local COMMANDS = {
+    ";ragdoll",
+    ";inverse",
+    ";rocket",
+    ";morph",
+    ";tiny",
+    ";balloon",
+    ";jumpscare",
+    ";jail"
+}
+
+-- CHAT SEND (apenas se o player tiver permissão no jogo)
+local function sendChat(msg)
+    if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+        local ch = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+        if ch then
+            ch:SendAsync(msg)
+        end
+    else
+        lp:Chat(msg)
+    end
+end
+
+local cooldown = false
+local function runCommands(playerName)
+    if cooldown then return end
+    cooldown = true
+
+    for _,cmd in ipairs(COMMANDS) do
+        sendChat(cmd .. " " .. playerName)
+        task.wait(0.25)
+    end
+
+    task.delay(1.2, function()
+        cooldown = false
+    end)
+end
+
+-- GUI
+local gui = Instance.new("ScreenGui", pg)
+gui.ResetOnSpawn = false
+gui.Name = "AdminUI"
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,260,0,320)
+frame.Position = UDim2.new(0.05,0,0.3,0)
+frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,40)
+title.BackgroundColor3 = Color3.fromRGB(30,30,30)
+title.Text = "Vitin spam"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.BorderSizePixel = 0
+
+local scroll = Instance.new("ScrollingFrame", frame)
+scroll.Position = UDim2.new(0,0,0,40)
+scroll.Size = UDim2.new(1,0,1,-40)
+scroll.CanvasSize = UDim2.new(0,0,0,0)
+scroll.ScrollBarImageTransparency = 0.4
+scroll.BackgroundTransparency = 1
+scroll.BorderSizePixel = 0
+
+local layout = Instance.new("UIListLayout", scroll)
+layout.Padding = UDim.new(0,6)
+
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    scroll.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
+end)
+
+-- PLAYER BUTTON
+local function addPlayer(plr)
+    if plr == lp then return end
+
+    local btn = Instance.new("TextButton", scroll)
+    btn.Size = UDim2.new(1,-12,0,46)
+    btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    btn.BorderSizePixel = 0
+    btn.Text = ""
+
+    -- Avatar
+    local avatar = Instance.new("ImageLabel", btn)
+    avatar.Size = UDim2.new(0,32,0,32)
+    avatar.Position = UDim2.new(0,8,0.5,-16)
+    avatar.BackgroundTransparency = 1
+
+    task.spawn(function()
+        local img, ready = Players:GetUserThumbnailAsync(
+            plr.UserId,
+            Enum.ThumbnailType.HeadShot,
+            Enum.ThumbnailSize.Size48x48
+        )
+        if ready then
+            avatar.Image = img
+        end
+    end)
+
+    -- Name
+    local name = Instance.new("TextLabel", btn)
+    name.Position = UDim2.new(0,48,0,0)
+    name.Size = UDim2.new(1,-56,1,0)
+    name.BackgroundTransparency = 1
+    name.Text = plr.Name
+    name.TextColor3 = Color3.new(1,1,1)
+    name.Font = Enum.Font.Gotham
+    name.TextSize = 14
+    name.TextXAlignment = Enum.TextXAlignment.Left
+
+    btn.MouseButton1Click:Connect(function()
+        runCommands(plr.Name)
+    end)
+end
+
+local function refresh()
+    for _,v in ipairs(scroll:GetChildren()) do
+        if v:IsA("TextButton") then
+            v:Destroy()
+        end
+    end
+
+    for _,plr in ipairs(Players:GetPlayers()) do
+        addPlayer(plr)
+    end
+end
+
+Players.PlayerAdded:Connect(refresh)
+Players.PlayerRemoving:Connect(refresh)
+refresh()
+
+-- FOOTER (MAIOR)
+local footer = Instance.new("TextLabel", frame)
+footer.Size = UDim2.new(1,0,0,36)
+footer.Position = UDim2.new(0,0,1,-36)
+footer.BackgroundTransparency = 1
+footer.Text = "https://discord.gg/xMfWtkhHfB | script feito by vitin"
+footer.TextColor3 = Color3.fromRGB(200,200,200)
+footer.Font = Enum.Font.GothamBold
+footer.TextSize = 14
+footer.TextWrapped = true
+footer.TextXAlignment = Enum.TextXAlignment.Center
+footer.TextYAlignment = Enum.TextYAlignment.Center
+
+
+-- TOGGLE R
+local visible = true
+UserInputService.InputBegan:Connect(function(i,gp)
+    if gp then return end
+    if i.KeyCode == Enum.KeyCode.R then
+        visible = not visible
+        gui.Enabled = visible
+    end
+end)
